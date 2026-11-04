@@ -19,6 +19,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 tests/test_prover.py
       - run: python3 tests/test_adapters.py
+      - name: the real kill -9 case, 20 times in a row (a timing race must show here)
+        run: for i in $(seq 20); do python3 tests/test_prover.py Safety.test_real_kill_9_from_outside_then_recover || exit 1; done
 
   demo:
     runs-on: ${{ vars.CI_RUNNER }}

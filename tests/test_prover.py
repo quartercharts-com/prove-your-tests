@@ -558,16 +558,21 @@ class Safety(Case):
         p = self.plants_file([plant("P1", KILL_A)])
         self.commit()
         out = self.tmp / "kill-out"
-        proc = subprocess.Popen([PY, str(SCRIPTS / "prove.py"), "--repo", str(self.repo), "--plants", str(p),
-                                 "--test-cmd", f"{TEST_CMD} && sleep 3", "--out", str(out), "--min-plants", "1",
-                                 "--baseline-runs", "1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        deadline = time.monotonic() + 30
-        while time.monotonic() < deadline and sha(self.repo / "calc.py") == self.orig:
-            time.sleep(0.05)
-        self.assertNotEqual(sha(self.repo / "calc.py"), self.orig, "the plant never went in")
-        os.kill(proc.pid, signal.SIGKILL)
-        proc.wait()
-        self.assertTrue((out / "journal.json").exists())
+        log = self.tmp / "kill-run.log"
+        with open(log, "w") as fh:
+            proc = subprocess.Popen([PY, str(SCRIPTS / "prove.py"), "--repo", str(self.repo), "--plants", str(p),
+                                     "--test-cmd", f"{TEST_CMD} && sleep 5", "--out", str(out), "--min-plants", "1",
+                                     "--baseline-runs", "1"], stdout=fh, stderr=subprocess.STDOUT)
+            # kill only after two positive signs that the plant is in: the journal exists and the file changed
+            deadline = time.monotonic() + 60
+            while time.monotonic() < deadline and proc.poll() is None and not (
+                    (out / "journal.json").exists() and sha(self.repo / "calc.py") != self.orig):
+                time.sleep(0.02)
+            planted = (out / "journal.json").exists() and sha(self.repo / "calc.py") != self.orig
+            exited = proc.poll()
+            os.kill(proc.pid, signal.SIGKILL) if exited is None else None
+            proc.wait()
+        self.assertTrue(planted, f"the plant never went in (runner exit {exited}); runner output:\n{log.read_text()}")
         r = subprocess.run([PY, str(SCRIPTS / "prove.py"), "--recover", str(out)], capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assert_clean()
