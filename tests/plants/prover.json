@@ -1,0 +1,1200 @@
+{
+  "version": 1,
+  "mode": "behavior",
+  "plants": [
+    {
+      "id": "M0001",
+      "form": "M1",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: a TIMEOUT baseline counts as green; only FAILED blocks plants",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if baseline != \"PASSED\":",
+          "new": "if baseline == \"FAILED\":"
+        }
+      ]
+    },
+    {
+      "id": "M0002",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: stale check reads key 'sha256' instead of 'file_sha256', so a changed file is never STALE",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if e.get(\"file_sha256\") and sha256(data)",
+          "new": "if e.get(\"sha256\") and sha256(data)"
+        }
+      ]
+    },
+    {
+      "id": "M0003",
+      "form": "M1",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: 'old' that occurs twice is accepted (only zero occurrences is STALE)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "elif text.count(e[\"old\"]) != 1:",
+          "new": "elif text.count(e[\"old\"]) < 1:"
+        }
+      ]
+    },
+    {
+      "id": "M0004",
+      "form": "M8",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: restore writes the bytes but never re-reads them, restored=True without verification",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "ok &= path.read_bytes() == original",
+          "new": "pass  # bytes were just written above"
+        }
+      ]
+    },
+    {
+      "id": "M0005",
+      "form": "M8",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: restore never deletes a created file (unlink dropped)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "                path.unlink()\n",
+          "new": "                pass\n"
+        }
+      ]
+    },
+    {
+      "id": "M0006",
+      "form": "M5",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: made_dirs records dirs that already exist instead of new ones, so created dirs stay behind",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if repo in d.parents and not d.exists()]",
+          "new": "if repo in d.parents and d.exists()]"
+        }
+      ]
+    },
+    {
+      "id": "M0007",
+      "form": "M7",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R4: journal is deleted only when restore FAILED and kept after success (recover data lost, next run refused)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "    if ok:\n        journal.unlink()",
+          "new": "    if not (ok):\n        journal.unlink()"
+        }
+      ]
+    },
+    {
+      "id": "M0008",
+      "form": "M8",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1/R4: journal never moved into place, so restore finds no journal, returns True and the plant stays in the file",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "os.replace(tmp, journal)  # the journal is on disk before any file changes",
+          "new": "pass  # the journal is on disk before any file changes"
+        }
+      ]
+    },
+    {
+      "id": "M0009",
+      "form": "M5",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: restore returns True as soon as a journal EXISTS, without restoring anything",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "    if not journal.exists():\n        return True\n    doc = json.loads",
+          "new": "    if journal.exists():\n        return True\n    doc = json.loads"
+        }
+      ]
+    },
+    {
+      "id": "M0010",
+      "form": "M6",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R3: restore always reports success, a restore failure becomes invisible",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "        journal.unlink()\n    return ok\n",
+          "new": "        journal.unlink()\n    return True\n"
+        }
+      ]
+    },
+    {
+      "id": "M0011",
+      "form": "M8",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: an n/a entry whose reason is only spaces counts as covered (.strip() dropped)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if c.get(\"na\", \"\").strip()}",
+          "new": "if c.get(\"na\", \"\")}"
+        }
+      ]
+    },
+    {
+      "id": "M0012",
+      "form": "M5",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: coverage ok becomes the missing list itself, so a file with missing forms counts as covered",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "\"ok\": not missing, \"missing\": missing,",
+          "new": "\"ok\": missing, \"missing\": missing,"
+        }
+      ]
+    },
+    {
+      "id": "M0013",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: a plants file with no mode is reported as full coverage",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "\"ok\": False, \"missing\": [], \"why\": \"plants file has no mode",
+          "new": "\"ok\": True, \"missing\": [], \"why\": \"plants file has no mode"
+        }
+      ]
+    },
+    {
+      "id": "M0014",
+      "form": "M1",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R3: a plant id run exactly twice is not flagged as a duplicate",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "ran.count(i) > 1",
+          "new": "ran.count(i) > 2"
+        }
+      ]
+    },
+    {
+      "id": "M0015",
+      "form": "M2",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: missing plants computed backwards (ran minus expected), so an interrupted run with fewer results is not NOT-RUN",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "missing = sorted(set(expected_ids) - set(ran))",
+          "new": "missing = sorted(set(ran) - set(expected_ids))"
+        }
+      ]
+    },
+    {
+      "id": "M0016",
+      "form": "M2",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R3: extra plants computed backwards (expected minus ran), so a plant not in the plan never FAILs",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "extra = sorted(set(ran) - set(expected_ids))",
+          "new": "extra = sorted(set(expected_ids) - set(ran))"
+        }
+      ]
+    },
+    {
+      "id": "M0017R",
+      "form": "M1",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "R2 (re-anchor of M0017): a non-KILLED, non-SURVIVED status (STALE, NOT-APPLIED) no longer blocks PASS (!= KILLED -> == KILLED); an all-stale run passes",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "elif r[\"status\"] != \"KILLED\":",
+          "new": "elif r[\"status\"] == \"KILLED\":"
+        }
+      ]
+    },
+    {
+      "id": "M0018",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R3: a RED negative control is ignored (compares against 'FAILED', a value control never has)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if r.get(\"control\") == \"RED\":",
+          "new": "if r.get(\"control\") == \"FAILED\":"
+        }
+      ]
+    },
+    {
+      "id": "M0019",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: a KILLED plant with no control recorded (None) is accepted as controlled",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "r.get(\"control\") not in (\"GREEN\", \"SKIPPED\")",
+          "new": "r.get(\"control\") not in (\"GREEN\", \"SKIPPED\", None)"
+        }
+      ]
+    },
+    {
+      "id": "M0020",
+      "form": "M2",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: min-plants off by one, 24 plants pass a minimum of 25",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if len(expected_ids) < min_plants:",
+          "new": "if len(expected_ids) < min_plants - 1:"
+        }
+      ]
+    },
+    {
+      "id": "M0021",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R3: FAIL no longer beats NOT-RUN; a SURVIVED plant reports NOT-RUN (exit 2, not 1)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "        return \"FAIL\", fail + notrun",
+          "new": "        return \"NOT-RUN\", fail + notrun"
+        }
+      ]
+    },
+    {
+      "id": "M0022",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: prove.py default --min-plants lowered from 25 to 20",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "ap.add_argument(\"--min-plants\", type=int, default=25)",
+          "new": "ap.add_argument(\"--min-plants\", type=int, default=20)"
+        }
+      ]
+    },
+    {
+      "id": "M0023",
+      "form": "M2",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: --shard I/N off by one (slices from I, not I-1), shard 1/N skips plant 1 and N/N runs nothing",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "selected = selected[i - 1::n]",
+          "new": "selected = selected[i::n]"
+        }
+      ]
+    },
+    {
+      "id": "M0024",
+      "form": "M1",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R3: plants_sha256 check inverted, a sealed file whose plants were edited is accepted",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "doc[\"plants_sha256\"] != digest:",
+          "new": "doc[\"plants_sha256\"] == digest:"
+        }
+      ]
+    },
+    {
+      "id": "M0025",
+      "form": "M7",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: plan_plant's create check is negated, so a create plant over an EXISTING file is accepted; it overwrites the real file and restore then deletes it while reporting restored=True",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if path.exists() or e[\"file\"] in final:",
+          "new": "if not (path.exists()) or e[\"file\"] in final:"
+        }
+      ]
+    },
+    {
+      "id": "M0026",
+      "form": "M6",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: a test-run timeout is returned as PASSED (baseline green on timeout; a timed-out plant SURVIVED)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "return \"TIMEOUT\", None,",
+          "new": "return \"PASSED\", None,"
+        }
+      ]
+    },
+    {
+      "id": "M0027",
+      "form": "M9",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: an interrupt during a test run is swallowed and reported as FAILED, so an interrupted plant counts KILLED and the run continues",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "        proc.wait()\n        raise\n",
+          "new": "        proc.wait()\n        return \"FAILED\", None, time.monotonic() - t0, \"\"\n"
+        }
+      ]
+    },
+    {
+      "id": "M0028",
+      "form": "M9",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1/R4: restore's per-file OSError handler re-raises instead of marking ok=False, so one failing file crashes restore with the later files not put back, and the run exits with a traceback instead of 3",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "            print(f\"prove: could not restore {s['file']}: {exc}\", file=sys.stderr)\n            ok = False\n",
+          "new": "            print(f\"prove: could not restore {s['file']}: {exc}\", file=sys.stderr)\n            raise\n"
+        }
+      ]
+    },
+    {
+      "id": "M0029",
+      "form": "M8",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R4: restore failure not recorded in restore_failed; run continues after it and exits 1, not 3",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "restore_failed |= not r[\"restored\"]",
+          "new": "pass  # already recorded in r[\"restored\"]"
+        }
+      ]
+    },
+    {
+      "id": "M0030",
+      "form": "M8",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R4: a new run no longer refuses while a journal exists (return dropped), it overwrites the old journal",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "Run: prove.py --recover {out}\")\n        return 3\n",
+          "new": "Run: prove.py --recover {out}\")\n"
+        }
+      ]
+    },
+    {
+      "id": "M0031",
+      "form": "M6",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R4: --recover returns 0 even when recovery is incomplete (should be 3)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "return 0 if ok else 3",
+          "new": "return 0"
+        }
+      ]
+    },
+    {
+      "id": "M0032",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R4: prove.py exit code for NOT-RUN mapped to 0 (looks like PASS to CI)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "return {\"PASS\": 0, \"FAIL\": 1}.get(v, 2)",
+          "new": "return {\"PASS\": 0, \"FAIL\": 1}.get(v, 0)"
+        }
+      ]
+    },
+    {
+      "id": "M0033",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R4: a failed restore exits 1 instead of 3",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "        return 3\n    return {\"PASS\"",
+          "new": "        return 1\n    return {\"PASS\""
+        }
+      ]
+    },
+    {
+      "id": "M0034",
+      "form": "M1",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: a TIMEOUT negative control counts GREEN (only FAILED is RED)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "\"GREEN\" if c == \"PASSED\" else \"RED\"",
+          "new": "\"GREEN\" if c != \"FAILED\" else \"RED\""
+        }
+      ]
+    },
+    {
+      "id": "M0036",
+      "form": "M5",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: min-plants applied only to --only/--shard runs, a full run with 3 plants can PASS",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if not (args.only or args.shard) else 0",
+          "new": "if (args.only or args.shard) else 0"
+        }
+      ]
+    },
+    {
+      "id": "M0037",
+      "form": "M8",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: --control none no longer forces coverage not-ok, so a run with no negative control can PASS",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "        coverage = {**coverage, \"ok\": False, \"why\": \"--control none: no negative control, cannot PASS\"}",
+          "new": "        pass  # --control none: SKIPPED controls are recorded per plant"
+        }
+      ]
+    },
+    {
+      "id": "M0038",
+      "form": "M3",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: made_dirs and->or, restore rmdirs pre-existing empty dirs under the repo (tree not identical)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if repo in d.parents and not d.exists()",
+          "new": "if repo in d.parents or not d.exists()"
+        }
+      ]
+    },
+    {
+      "id": "M0039",
+      "form": "M3",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: outside-repo check gets an extra 'and', a plant may write a sibling of the repo",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if repo not in path.parents:",
+          "new": "if repo not in path.parents and not path.is_relative_to(repo.parent):"
+        }
+      ]
+    },
+    {
+      "id": "M0040",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: union.py default --min-plants lowered from 25 to 10",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/union.py",
+          "old": "ap.add_argument(\"--min-plants\", type=int, default=25)",
+          "new": "ap.add_argument(\"--min-plants\", type=int, default=10)"
+        }
+      ]
+    },
+    {
+      "id": "M0041",
+      "form": "M1",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R3: shards on two different repo heads are accepted (> 1 became > 2)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/union.py",
+          "old": "if len(heads) > 1:",
+          "new": "if len(heads) > 2:"
+        }
+      ]
+    },
+    {
+      "id": "M0042",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R3: wording change drops 'different', a shard on another plants file is NOT-RUN instead of FAIL",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/union.py",
+          "old": "ran a different plants file",
+          "new": "ran another plants file"
+        }
+      ]
+    },
+    {
+      "id": "M0043",
+      "form": "M3",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R1: union baseline green when ANY shard baseline was green (all -> any)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/union.py",
+          "old": "all(r[\"baseline\"] == \"PASSED\" for r in reports)",
+          "new": "any(r[\"baseline\"] == \"PASSED\" for r in reports)"
+        }
+      ]
+    },
+    {
+      "id": "M0044",
+      "form": "M7",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2/R3: union ignores problems when there are some (missing shard, different file/head) and degrades clean unions",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/union.py",
+          "old": "    if problems:\n",
+          "new": "    if not (problems):\n"
+        }
+      ]
+    },
+    {
+      "id": "M0045",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R2: union expects only the plants the shards reported, so a missing shard is fine",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/union.py",
+          "old": "v, reasons = verdict(baseline, results, expected,",
+          "new": "v, reasons = verdict(baseline, results, [x[\"id\"] for x in results],"
+        }
+      ]
+    },
+    {
+      "id": "M0046",
+      "form": "M4",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R4: union.py exit code for NOT-RUN mapped to 0",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/union.py",
+          "old": "return {\"PASS\": 0, \"FAIL\": 1}.get(v, 2)",
+          "new": "return {\"PASS\": 0, \"FAIL\": 1}.get(v, 0)"
+        }
+      ]
+    },
+    {
+      "id": "M0047",
+      "form": "M8",
+      "author": "plant-writer subagent 2026-11-04",
+      "why": "R3: union drops the plants_sha256 problem for shards (append dropped), a shard on another plants file can PASS",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/union.py",
+          "old": "            problems.append(f\"shard {r['shard']}: ran a different plants file ({r['plants_sha256'][:12]})\")",
+          "new": "            pass  # shard {r['shard']} plants file checked by prove.py"
+        }
+      ]
+    },
+    {
+      "id": "M0048",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P1: a TIMEOUT under a plant is recorded as status KILLED, so a hang counts as a kill and the run can PASS",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "\"TIMEOUT\": \"TIMEOUT\",",
+          "new": "\"TIMEOUT\": \"KILLED\","
+        }
+      ]
+    },
+    {
+      "id": "M0049",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P1: verdict no longer adds a NOT-RUN reason for status TIMEOUT (append dropped), so a timed-out plant does not block PASS",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "notrun.append(f\"{r['id']} TIMEOUT: a hang is not a kill; raise --timeout or fix the hang\")",
+          "new": "pass"
+        }
+      ]
+    },
+    {
+      "id": "M0050",
+      "form": "M6",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P1: run_tests returns FAILED (not TIMEOUT) on a timeout, so a hanging plant becomes KILLED instead of TIMEOUT/NOT-RUN",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "return \"TIMEOUT\", None,",
+          "new": "return \"FAILED\", None,"
+        }
+      ]
+    },
+    {
+      "id": "M0051",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P2: the not-a-git-work-tree refusal prints but no longer returns 2, so prove runs (applies plants, writes a report) outside git without --allow-dirty",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "\"Commit it to git, or pass --allow-dirty.\")\n            return 2\n",
+          "new": "\"Commit it to git, or pass --allow-dirty.\")\n"
+        }
+      ]
+    },
+    {
+      "id": "M0052",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P2: the uncommitted-changes refusal prints but no longer returns 2, so prove plants into a dirty tree without --allow-dirty",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "\"(a plant must never mix with your own edits), or pass --allow-dirty.\")\n            return 2\n",
+          "new": "\"(a plant must never mix with your own edits), or pass --allow-dirty.\")\n"
+        }
+      ]
+    },
+    {
+      "id": "M0053",
+      "form": "M5",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P2: 'not' dropped from 'if not args.allow_dirty', so a dirty or non-git tree runs WITHOUT --allow-dirty (and is refused only WITH it)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if not args.allow_dirty:",
+          "new": "if args.allow_dirty:"
+        }
+      ]
+    },
+    {
+      "id": "M0054",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P2: git status runs with --untracked-files=no, so untracked files never make the tree dirty and the run is not refused",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "\"--untracked-files=all\"",
+          "new": "\"--untracked-files=no\""
+        }
+      ]
+    },
+    {
+      "id": "M0055",
+      "form": "M6",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P2: is_report returns True for every non-'??' status line, so modified tracked files are treated as report files and the dirty tree is not refused",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if not line.startswith(\"??\"):\n            return False",
+          "new": "if not line.startswith(\"??\"):\n            return True"
+        }
+      ]
+    },
+    {
+      "id": "M0056",
+      "form": "M6",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P3: an untracked file inside THIS run's out dir (no marker yet) is no longer exempt (return True -> False), so the run refuses as dirty",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "out in p.parents):\n            return True",
+          "new": "out in p.parents):\n            return False"
+        }
+      ]
+    },
+    {
+      "id": "M0057",
+      "form": "M6",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P3: the out-dir marker check is replaced by return False, so untracked files in an earlier prove out dir (holding the marker) count as uncommitted work",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "return any((d / OUT_MARKER).is_file() for d in p.parents if root in d.parents)",
+          "new": "return False"
+        }
+      ]
+    },
+    {
+      "id": "M0058",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P3: the out-dir marker file is never written (write dropped), so a later run with another --out sees this run's report files as uncommitted work and refuses",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "(out / OUT_MARKER).write_text(\"prove-your-tests report folder\\n\")",
+          "new": "pass  # report folder"
+        }
+      ]
+    },
+    {
+      "id": "M0059",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P3: porcelain path sliced from index 2 instead of 3 (leading space kept), so no untracked report path resolves inside the out dir or a marker folder and every report file counts as dirty",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "line[3:].strip('\"')",
+          "new": "line[2:].strip('\"')"
+        }
+      ]
+    },
+    {
+      "id": "M0060",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P4: default --baseline-runs lowered from 3 to 1, so a flaky suite is caught only by luck",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "ap.add_argument(\"--baseline-runs\", type=int, default=3,",
+          "new": "ap.add_argument(\"--baseline-runs\", type=int, default=1,"
+        }
+      ]
+    },
+    {
+      "id": "M0061",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P4: the baseline loop always runs once (range(1)), ignoring --baseline-runs, so a red 2nd or 3rd run is never seen",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "for n in range(args.baseline_runs):",
+          "new": "for n in range(1):"
+        }
+      ]
+    },
+    {
+      "id": "M0062",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P4: break dropped in the baseline loop, so right after a non-green run the next line sets baseline = PASSED and plants run",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "                break\n            baseline = \"PASSED\"",
+          "new": "                pass\n            baseline = \"PASSED\""
+        }
+      ]
+    },
+    {
+      "id": "M0063",
+      "form": "M1",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P4: plants run whenever the baseline is not FAILED (== PASSED -> != FAILED), so a FLAKY or TIMEOUT baseline still applies and runs plants",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if baseline == \"PASSED\":\n            for p in selected:",
+          "new": "if baseline != \"FAILED\":\n            for p in selected:"
+        }
+      ]
+    },
+    {
+      "id": "M0064",
+      "form": "M1",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P4/P1: a baseline run only counts as non-green when FAILED (!= PASSED -> == FAILED), so a TIMEOUT baseline run is treated as green and plants run",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if outcome != \"PASSED\":",
+          "new": "if outcome == \"FAILED\":"
+        }
+      ]
+    },
+    {
+      "id": "M0065",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P4: a non-green 2nd/3rd baseline run sets baseline to PASSED instead of FLAKY, so a flaky suite runs every plant and can PASS",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "baseline = outcome if n == 0 else f\"FLAKY (run {n + 1} of {args.baseline_runs} was {outcome})\"",
+          "new": "baseline = outcome if n == 0 else \"PASSED\""
+        }
+      ]
+    },
+    {
+      "id": "M0066",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P5: the red control is not re-run (second run_tests dropped, c2 = c), so red-then-green is control RED / FAIL instead of FLAKY",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "c2, _, _, ctail = run_tests(args.test_cmd, repo, args.timeout)",
+          "new": "c2 = c"
+        }
+      ]
+    },
+    {
+      "id": "M0067",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P5: red-then-green control sets status KILLED (not FLAKY) with control GREEN, so a flaky kill is counted and can PASS",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "r[\"status\"], c = \"FLAKY\", \"PASSED\"",
+          "new": "r[\"status\"], c = \"KILLED\", \"PASSED\""
+        }
+      ]
+    },
+    {
+      "id": "M0068",
+      "form": "M1",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P5: re-run check inverted (== -> !=), so red twice becomes FLAKY (NOT-RUN, not FAIL) and red-then-green becomes control RED",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if c2 == \"PASSED\":",
+          "new": "if c2 != \"PASSED\":"
+        }
+      ]
+    },
+    {
+      "id": "M0069",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P5: verdict no longer adds a NOT-RUN reason for status FLAKY (append dropped); a FLAKY plant has control GREEN, so the run can PASS",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "notrun.append(f\"{r['id']} FLAKY: the tests failed without the plant too, so the kill is not counted\")",
+          "new": "pass"
+        }
+      ]
+    },
+    {
+      "id": "M0070",
+      "form": "M3",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P6: counts.killed uses 'or' instead of 'and', so FLAKY plants (control GREEN) and KILLED plants with control RED are counted as killed",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "r[\"status\"] == \"KILLED\" and r.get(\"control\") in",
+          "new": "r[\"status\"] == \"KILLED\" or r.get(\"control\") in"
+        }
+      ]
+    },
+    {
+      "id": "M0071",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P6: counts.killed also accepts control RED, so a kill whose negative control failed twice is counted as killed",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "r.get(\"control\") in (\"GREEN\", \"SKIPPED\")",
+          "new": "r.get(\"control\") in (\"GREEN\", \"SKIPPED\", \"RED\")"
+        }
+      ]
+    },
+    {
+      "id": "M0072",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P6/P5: counts.killed counts status FLAKY as well as KILLED",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "\"killed\": sum(r[\"status\"] == \"KILLED\" and",
+          "new": "\"killed\": sum(r[\"status\"] in (\"KILLED\", \"FLAKY\") and"
+        }
+      ]
+    },
+    {
+      "id": "M0073",
+      "form": "M9",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P7: the apply handler catches ValueError instead of OSError, so a read-only file or disk-full error crashes the whole run instead of NOT-APPLIED and continue",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "except OSError as exc:  # a write failed",
+          "new": "except ValueError as exc:  # a write failed"
+        }
+      ]
+    },
+    {
+      "id": "M0074",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P7: a NOT-APPLIED outcome is mapped to status KILLED, so a plant that never reached disk counts as a kill (and gets a control run)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "\"NOT-APPLIED\": \"NOT-APPLIED\"}[outcome]",
+          "new": "\"NOT-APPLIED\": \"KILLED\"}[outcome]"
+        }
+      ]
+    },
+    {
+      "id": "M0075",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P7: a failed apply records outcome PASSED, so the plant is SURVIVED (FAIL) instead of NOT-APPLIED (NOT-RUN)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "outcome, secs, tail = \"NOT-APPLIED\", 0.0, \"\"",
+          "new": "outcome, secs, tail = \"PASSED\", 0.0, \"\""
+        }
+      ]
+    },
+    {
+      "id": "M0076",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P8: the per-plant restore is moved out of 'finally' and the crash handler's restore is dropped, so any non-OSError exception during apply or the test run propagates with the plant still in the file",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "                finally:\n                    r[\"restored\"] = restore(repo, journal)\n                    restore_failed |= not r[\"restored\"]\n",
+          "new": "                r[\"restored\"] = restore(repo, journal)\n                restore_failed |= not r[\"restored\"]\n"
+        },
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "        if not restore(repo, journal):\n            print(f\"prove: CRASHED",
+          "new": "        if False:\n            print(f\"prove: CRASHED"
+        }
+      ]
+    },
+    {
+      "id": "M0077",
+      "form": "M9",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P8: the crash handler swallows the exception (raise -> pass), so a crash during the loop no longer propagates; the run silently writes a report from partial results",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "file=sys.stderr)\n        raise\n",
+          "new": "file=sys.stderr)\n        pass\n"
+        }
+      ]
+    },
+    {
+      "id": "M0078",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P9: SIGHUP and SIGQUIT are no longer caught, so a closed terminal or QUIT kills the run with the plant still in the file",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "(\"SIGINT\", \"SIGTERM\", \"SIGHUP\", \"SIGQUIT\")",
+          "new": "(\"SIGINT\", \"SIGTERM\")"
+        }
+      ]
+    },
+    {
+      "id": "M0079",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P9: SIGTERM is no longer caught, so 'kill <pid>' ends the run with the plant still in the file",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "(\"SIGINT\", \"SIGTERM\", \"SIGHUP\", \"SIGQUIT\")",
+          "new": "(\"SIGINT\", \"SIGHUP\", \"SIGQUIT\")"
+        }
+      ]
+    },
+    {
+      "id": "M0080",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P9: the caught signals get SIG_DFL instead of _raise_interrupt, so every signal (even Ctrl-C) kills the process without restoring",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "signal.signal(getattr(signal, s), _raise_interrupt) for s in caught}",
+          "new": "signal.signal(getattr(signal, s), signal.SIG_DFL) for s in caught}"
+        }
+      ]
+    },
+    {
+      "id": "M0081",
+      "form": "M9",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P10: the decode handler catches UnicodeEncodeError instead of UnicodeDecodeError, so a non-UTF-8 file crashes the run instead of making the plant STALE",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "except UnicodeDecodeError:",
+          "new": "except UnicodeEncodeError:"
+        }
+      ]
+    },
+    {
+      "id": "M0082",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P10: a non-UTF-8 file is decoded with errors='replace', so it is planted (and rewritten with replacement characters) instead of STALE",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "created, text = False, data.decode(\"utf-8\")",
+          "new": "created, text = False, data.decode(\"utf-8\", errors=\"replace\")"
+        }
+      ]
+    },
+    {
+      "id": "M0083",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P10: planted files are written with write_text(newline='\\r\\n'), so every newline is translated and the planted bytes are not the exact planted text",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "path.write_bytes(text.encode(\"utf-8\"))  # exact bytes",
+          "new": "path.write_text(text, encoding=\"utf-8\", newline=\"\\r\\n\")  # exact bytes"
+        }
+      ]
+    },
+    {
+      "id": "M0084",
+      "form": "M4",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P10: planted text is encoded as latin-1 with errors='replace', so non-ASCII planted text is written as the wrong bytes (or '?')",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "path.write_bytes(text.encode(\"utf-8\"))  # exact bytes",
+          "new": "path.write_bytes(text.encode(\"latin-1\", errors=\"replace\"))  # exact bytes"
+        }
+      ]
+    },
+    {
+      "id": "M0085",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P11: the no-op check no longer returns a problem (return -> pass), so a plant whose result equals the current bytes is applied and run instead of STALE",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "return {}, f\"{rel}: the plant changes nothing (a no-op plant cannot prove a kill)\"",
+          "new": "pass"
+        }
+      ]
+    },
+    {
+      "id": "M0086",
+      "form": "M1",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P11: the no-op comparison uses 'is' instead of '==', which is never true for fresh bytes, so a no-op plant is never STALE",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "read_bytes() == text.encode(\"utf-8\"):",
+          "new": "read_bytes() is text.encode(\"utf-8\"):"
+        }
+      ]
+    },
+    {
+      "id": "M0087",
+      "form": "M1",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P12: restore's skip test inverted (== -> !=), so it rewrites files that already equal the original (fails on a read-only file) and skips changed ones (restore verified False)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "path.read_bytes() == original):  # an unchanged file needs no write",
+          "new": "path.read_bytes() != original):  # an unchanged file needs no write"
+        }
+      ]
+    },
+    {
+      "id": "M0088",
+      "form": "M7",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P12: restore always rewrites (condition replaced by True), so an unchanged read-only file fails to restore and the run reports NOT restored / exit 3",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if not (path.is_file() and path.read_bytes() == original):  # an unchanged file needs no write",
+          "new": "if True:  # an unchanged file needs no write"
+        }
+      ]
+    },
+    {
+      "id": "M0089",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P12: the is_file() guard is dropped from restore's skip test, so a planted file deleted during the run raises on read and is never rewritten (restored False)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "if not (path.is_file() and path.read_bytes() == original):",
+          "new": "if not (path.read_bytes() == original):"
+        }
+      ]
+    },
+    {
+      "id": "M0090",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P13: the journal is no longer fsynced before files change (os.fsync dropped)",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "        os.fsync(fh.fileno())\n",
+          "new": "        pass\n"
+        }
+      ]
+    },
+    {
+      "id": "M0091",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P13/P7: the files are written BEFORE the journal, so a failure on the 2nd file of a multi-file plant (or a crash mid-write) leaves no journal: restore returns True and the 1st file stays planted",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "    tmp = journal.with_suffix(\".tmp\")\n    with open(tmp, \"w\", encoding=\"utf-8\") as fh:\n        fh.write(json.dumps({\"plant\": plant[\"id\"], \"saved\": saved}))\n        fh.flush()\n        os.fsync(fh.fileno())\n    os.replace(tmp, journal)  # the journal is on disk before any file changes\n    for rel, (created, text) in final.items():\n        path = repo / rel\n        if created:\n            path.parent.mkdir(parents=True, exist_ok=True)\n        path.write_bytes(text.encode(\"utf-8\"))  # exact bytes: no newline or locale translation\n",
+          "new": "    for rel, (created, text) in final.items():\n        path = repo / rel\n        if created:\n            path.parent.mkdir(parents=True, exist_ok=True)\n        path.write_bytes(text.encode(\"utf-8\"))  # exact bytes: no newline or locale translation\n    tmp = journal.with_suffix(\".tmp\")\n    with open(tmp, \"w\", encoding=\"utf-8\") as fh:\n        fh.write(json.dumps({\"plant\": plant[\"id\"], \"saved\": saved}))\n        fh.flush()\n        os.fsync(fh.fileno())\n    os.replace(tmp, journal)  # the journal is on disk before any file changes\n"
+        }
+      ]
+    },
+    {
+      "id": "M0092",
+      "form": "M8",
+      "author": "plant-writer (tests not read) 2026-11-04",
+      "why": "P13: the planted text is written before the originals are saved, so the journal records the PLANTED bytes; restore 'verifies' them and the plant stays in the file",
+      "edits": [
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "    saved = []\n    for rel, (created, _) in final.items():\n",
+          "new": "    for rel, (created, text) in final.items():\n        path = repo / rel\n        if created:\n            path.parent.mkdir(parents=True, exist_ok=True)\n        path.write_bytes(text.encode(\"utf-8\"))  # exact bytes: no newline or locale translation\n    saved = []\n    for rel, (created, _) in final.items():\n"
+        },
+        {
+          "file": "skill/prove-your-tests/scripts/prove.py",
+          "old": "    tmp = journal.with_suffix(\".tmp\")\n    with open(tmp, \"w\", encoding=\"utf-8\") as fh:\n        fh.write(json.dumps({\"plant\": plant[\"id\"], \"saved\": saved}))\n        fh.flush()\n        os.fsync(fh.fileno())\n    os.replace(tmp, journal)  # the journal is on disk before any file changes\n    for rel, (created, text) in final.items():\n        path = repo / rel\n        if created:\n            path.parent.mkdir(parents=True, exist_ok=True)\n        path.write_bytes(text.encode(\"utf-8\"))  # exact bytes: no newline or locale translation\n",
+          "new": "    tmp = journal.with_suffix(\".tmp\")\n    with open(tmp, \"w\", encoding=\"utf-8\") as fh:\n        fh.write(json.dumps({\"plant\": plant[\"id\"], \"saved\": saved}))\n        fh.flush()\n        os.fsync(fh.fileno())\n    os.replace(tmp, journal)  # the journal is on disk before any file changes\n"
+        }
+      ]
+    }
+  ],
+  "coverage": []
+}

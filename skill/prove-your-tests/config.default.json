@@ -1,0 +1,25 @@
+{
+  "_comment": "Copy to .prove-your-tests.json at your repo root and change what you need. Every value is a default, not a rule.",
+  "plant_writer": {
+    "agent": "plant-writer",
+    "model": "opus",
+    "effort": "high",
+    "why": "plants are the whole proof: use the strongest model you have, at high effort",
+    "small_plan_model": "sonnet",
+    "small_plan_note": "on a small plan a cheaper model may write simple, repetitive plants (one per site of a known form); keep the strongest model for escape plants on money, accounts and sign-up"
+  },
+  "runner": {
+    "model": null,
+    "why": "prove.py is a plain script; no model reads test output"
+  },
+  "fixer": {
+    "model": "inherit",
+    "effort": "high",
+    "why": "the window that owns the tests writes the missing tests for survivors"
+  },
+  "min_plants": 25,
+  "timeout_seconds": 300,
+  "control": "each",
+  "heavy_runs": "ci",
+  "effect_checks_required_for": ["money", "accounts", "access"]
+}

@@ -1,0 +1,16 @@
+name: Hall of Fame (before and after)
+description: Share how many planted bugs your tests caught before and after you fixed the holes.
+title: "Hall of Fame: <project or area>"
+labels: [hall-of-fame]
+body:
+  - type: input
+    id: before
+    attributes: { label: "Before (from your report)", placeholder: "10/25 caught (FAIL)" }
+    validations: { required: true }
+  - type: input
+    id: after
+    attributes: { label: "After, same plants file", placeholder: "25/25 caught (PASS)" }
+    validations: { required: true }
+  - type: textarea
+    id: story
+    attributes: { label: "What the survivors showed (no secrets, no private code)" }

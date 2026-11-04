@@ -1,0 +1,13 @@
+name: Add an evasion form (good first issue)
+description: A way code can reach a guarded effect that the 15 forms (E1 to E15) do not cover.
+title: "Evasion form: <short name>"
+labels: [good first issue, catalog]
+body:
+  - type: textarea
+    id: example
+    attributes: { label: "A minimal code example of the escape", render: python }
+    validations: { required: true }
+  - type: textarea
+    id: why
+    attributes: { label: "Why no existing form (references/catalog.md) covers it" }
+    validations: { required: true }

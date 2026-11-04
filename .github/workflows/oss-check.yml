@@ -1,0 +1,21 @@
+name: oss-check
+# On demand only: a light field test on three small public repos (see tools/oss_check.sh).
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  oss-check:
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bash tools/oss_check.sh oss-reports
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oss-reports
+          path: oss-reports/

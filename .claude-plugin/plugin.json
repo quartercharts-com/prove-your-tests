@@ -1,0 +1,19 @@
+{
+  "name": "prove-your-tests",
+  "displayName": "Prove your tests",
+  "version": "0.1.0",
+  "description": "Proves that your tests catch real bugs: plants deliberate bugs, runs the tests, restores every file byte-identical, and says PASS only when every plant was caught.",
+  "author": { "name": "QuarterCharts" },
+  "homepage": "https://github.com/quartercharts-com/prove-your-tests",
+  "repository": "https://github.com/quartercharts-com/prove-your-tests",
+  "license": "MIT",
+  "keywords": ["testing", "mutation-testing", "test-quality", "guards"],
+  "skills": ["./skill/"],
+  "agents": ["./agents/plant-writer.md"],
+  "mcpServers": {
+    "prove-your-tests": {
+      "command": "python3",
+      "args": ["-I", "${CLAUDE_PLUGIN_ROOT}/skill/prove-your-tests/scripts/mcp_server.py"]
+    }
+  }
+}

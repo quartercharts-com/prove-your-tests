@@ -1,0 +1,702 @@
+{
+  "version": 1,
+  "mode": "guard",
+  "plants": [
+    {
+      "id": "E0001",
+      "form": "E1",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row through an alias-imported helper module, no 50 limit",
+      "edits": [
+        {
+          "file": "shop_payouts.py",
+          "create": "\"\"\"Payout helpers.\"\"\"  # plant E1: alias-imported second writer\n\n\ndef give_back(book, order, amount, by):\n    order.refunded += amount\n    book.append({\"order\": order.id, \"amount\": -amount, \"by\": by})\n    return order.refunded\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    from shop_payouts import give_back as settle  # plant E1: alias import\n    return settle(LEDGER, order, left, user.name)"
+        }
+      ]
+    },
+    {
+      "id": "E0002",
+      "form": "E1",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note writes a ledger credit row through a module-level alias import",
+      "edits": [
+        {
+          "file": "goodwill.py",
+          "create": "\"\"\"Goodwill credits.\"\"\"  # plant E1: alias-imported ledger writer\n\n\ndef credit(book, order, by):\n    order.refunded += 1\n    book.append({\"order\": order.id, \"amount\": -1, \"by\": by})\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "from dataclasses import dataclass, field\n",
+          "new": "from dataclasses import dataclass, field\nfrom goodwill import credit as note_credit  # plant E1: alias import\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    note_credit(LEDGER, order, user.name)\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0003",
+      "form": "E2",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note writes a ledger row through the module object attribute sys.modules[__name__].LEDGER",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    import sys as _sys  # plant E2: module attribute\n    _sys.modules[__name__].LEDGER.append({\"order\": order.id, \"amount\": -1, \"by\": user.name})\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0004",
+      "form": "E2",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row via module.refund with a module.User admin",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    import sys as _sys  # plant E2: module attribute call\n    _shop = _sys.modules[__name__]\n    return _shop.refund(order, left, _shop.User(user.name, is_admin=True))"
+        }
+      ]
+    },
+    {
+      "id": "E0005",
+      "form": "E3",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note writes a ledger row via getattr(LEDGER, 'append')",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    getattr(LEDGER, \"append\")({\"order\": order.id, \"amount\": -1, \"by\": user.name})  # plant E3: getattr\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0006",
+      "form": "E3",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note refunds the whole open balance via globals()['ref'+'und'] with an admin user",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    bal = order_balance(order)\n    if bal > 0:\n        globals()[\"ref\" + \"und\"](order, bal, User(\"notes-bot\", is_admin=True))  # plant E3: string dispatch\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0007",
+      "form": "E3",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row via getattr(LEDGER, 'ext'+'end')",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    order.refunded += left\n    getattr(LEDGER, \"ext\" + \"end\")([{\"order\": order.id, \"amount\": -left, \"by\": user.name}])  # plant E3: built attribute name\n    return order.refunded"
+        }
+      ]
+    },
+    {
+      "id": "E0008",
+      "form": "E4",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 succeeds: the limit only applies when a 'limit' argument is passed (default None)",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "def refund(order: Order, amount: int, user: User) -> int:",
+          "new": "def refund(order: Order, amount: int, user: User, limit: int | None = None) -> int:  # plant E4: default arg"
+        },
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    if limit is not None and not user.is_admin and amount > limit:\n        raise PermissionError(\"needs an admin\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0009",
+      "form": "E4",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 succeeds: the limit check sits behind a keyword-only flag defaulting to False",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "def refund(order: Order, amount: int, user: User) -> int:",
+          "new": "def refund(order: Order, amount: int, user: User, *, enforce_limit: bool = False) -> int:  # plant E4: keyword default"
+        },
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    if enforce_limit and not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0010",
+      "form": "E4",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund up to the full paid amount succeeds: the cap comes from **opts with order.paid as default",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "def refund(order: Order, amount: int, user: User) -> int:",
+          "new": "def refund(order: Order, amount: int, user: User, **opts) -> int:  # plant E4: **kwargs"
+        },
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    if not user.is_admin and amount > opts.get(\"max_amount\", order.paid):\n        raise PermissionError(\"needs an admin\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0011",
+      "form": "E4",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row: cancel passes user by **dict with is_admin=True",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, **{\"user\": User(user.name, **{\"is_admin\": True})})  # plant E4: **kwargs"
+        }
+      ]
+    },
+    {
+      "id": "E0012",
+      "form": "E5",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note writes a ledger row through a stored bound method _POST = LEDGER.append",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\n",
+          "new": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\n_POST = LEDGER.append  # plant E5: stored callable\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    _POST({\"order\": order.id, \"amount\": -1, \"by\": user.name})\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0013",
+      "form": "E5",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "order_balance (a read) writes a ledger row through a lambda kept in a hooks list",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\n",
+          "new": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\n_BALANCE_HOOKS = [lambda o: LEDGER.append({\"order\": o.id, \"amount\": -1, \"by\": \"balance\"})]  # plant E5: lambda in list\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    return order.paid - order.refunded\n",
+          "new": "    for _hook in _BALANCE_HOOKS:\n        _hook(order)\n    return order.paid - order.refunded\n"
+        }
+      ]
+    },
+    {
+      "id": "E0014",
+      "form": "E5",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row through functools.partial(refund, user=admin)",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "from dataclasses import dataclass, field\n",
+          "new": "from dataclasses import dataclass, field\nfrom functools import partial  # plant E5\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    pay = partial(refund, user=User(\"cancel-bot\", is_admin=True))  # plant E5: partial\n    return pay(order, left)"
+        }
+      ]
+    },
+    {
+      "id": "E0015",
+      "form": "E5",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note writes a ledger row through a class attribute holding LEDGER.append",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\n",
+          "new": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\n\n\nclass _Book:  # plant E5: class attribute callable\n    post = LEDGER.append\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    _Book.post({\"order\": order.id, \"amount\": -1, \"by\": user.name})\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0016",
+      "form": "E6",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 succeeds: a decorator on refund() swaps the caller for an admin User",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\n",
+          "new": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\n\n\ndef _as_admin(fn):  # plant E6: wrapper decorator\n    def wrapper(order, amount, user):\n        return fn(order, amount, User(user.name, is_admin=True))\n    return wrapper\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "def refund(order: Order, amount: int, user: User) -> int:",
+          "new": "@_as_admin\ndef refund(order: Order, amount: int, user: User) -> int:"
+        }
+      ]
+    },
+    {
+      "id": "E0017",
+      "form": "E6",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 succeeds: a User.__post_init__ override makes every named user an admin",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    name: str\n    is_admin: bool = False\n",
+          "new": "    name: str\n    is_admin: bool = False\n\n    def __post_init__(self) -> None:  # plant E6: override\n        self.is_admin = self.is_admin or bool(self.name)\n"
+        }
+      ]
+    },
+    {
+      "id": "E0018",
+      "form": "E6",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 in ONE call succeeds: a wrapper redefines refund() to split it into 50-chunks (two ledger rows)",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    return order.refunded\n\n\ndef add_note",
+          "new": "    return order.refunded\n\n\n_refund_one = refund\n\n\ndef refund(order: Order, amount: int, user: User) -> int:  # plant E6: wrapper splits past the limit\n    done = order.refunded\n    while amount > 0:\n        step = min(amount, MAX_SELF_REFUND)\n        done = _refund_one(order, step, user)\n        amount -= step\n    return done\n\n\ndef add_note"
+        }
+      ]
+    },
+    {
+      "id": "E0019",
+      "form": "E7",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note writes a ledger row through the unbound list.append(LEDGER, row)",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    list.append(LEDGER, {\"order\": order.id, \"amount\": -1, \"by\": user.name})  # plant E7: raw unbound call\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0020",
+      "form": "E7",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row by raw slice assignment LEDGER[len:] = [row]",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    order.refunded += left\n    LEDGER[len(LEDGER):] = [{\"order\": order.id, \"amount\": -left, \"by\": user.name}]  # plant E7: raw slice write\n    return order.refunded"
+        }
+      ]
+    },
+    {
+      "id": "E0021",
+      "form": "E7",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note writes a ledger row built by a shell subprocess and stored with LEDGER.__iadd__",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    import json as _json, subprocess as _sp, sys as _sys  # plant E7: shell call feeds the ledger\n    out = _sp.run([_sys.executable, \"-I\", \"-c\", \"import json,sys; print(json.dumps({'order': sys.argv[1], 'amount': -1, 'by': sys.argv[2]}))\", order.id, user.name], capture_output=True, text=True, check=True).stdout\n    LEDGER.__iadd__([_json.loads(out)])\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0022",
+      "form": "E8",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note writes a ledger row from a background thread (Thread(target=LEDGER.append))",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    import threading  # plant E8: thread twin\n    t = threading.Thread(target=LEDGER.append, args=({\"order\": order.id, \"amount\": -1, \"by\": user.name},))\n    t.start()\n    t.join()\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0023",
+      "form": "E8",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row through an async copy of refund() without the limit",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    return order.refunded\n\n\ndef add_note",
+          "new": "    return order.refunded\n\n\nasync def refund_async(order: Order, amount: int, user: User) -> int:  # plant E8: async twin\n    if amount <= 0:\n        raise ValueError(\"amount must be positive\")\n    if amount > order.paid - order.refunded:\n        raise ValueError(\"more than was paid\")\n    order.refunded += amount\n    LEDGER.append({\"order\": order.id, \"amount\": -amount, \"by\": user.name})\n    return order.refunded\n\n\ndef add_note"
+        },
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    import asyncio  # plant E8\n    return asyncio.run(refund_async(order, left, user))"
+        }
+      ]
+    },
+    {
+      "id": "E0024",
+      "form": "E8",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note refunds up to 50 via a thread-pool worker running refund() as admin",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    from concurrent.futures import ThreadPoolExecutor  # plant E8: executor twin\n    bal = min(order_balance(order), MAX_SELF_REFUND)\n    if bal > 0:\n        with ThreadPoolExecutor(1) as ex:\n            ex.submit(refund, order, bal, User(\"worker\", is_admin=True)).result()\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0025",
+      "form": "E9",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note writes a ledger row directly (second writer of LEDGER)",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    LEDGER.append({\"order\": order.id, \"amount\": -1, \"by\": user.name})  # plant E9: second writer\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0026",
+      "form": "E9",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "order_balance (a read) writes a -1 'rounding credit' ledger row",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    return order.paid - order.refunded\n",
+          "new": "    order.refunded += 1\n    LEDGER.append({\"order\": order.id, \"amount\": -1, \"by\": \"rounding\"})  # plant E9: reader writes\n    return order.paid - order.refunded\n"
+        }
+      ]
+    },
+    {
+      "id": "E0027",
+      "form": "E9",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row from a separate 'nightly job' module",
+      "edits": [
+        {
+          "file": "nightly_job.py",
+          "create": "\"\"\"Nightly settlement job.\"\"\"  # plant E9: second writer module\n\n\ndef settle_open_orders(book, orders):\n    for o in orders:\n        left = o.paid - o.refunded\n        if left > 0:\n            o.refunded += left\n            book.append({\"order\": o.id, \"amount\": -left, \"by\": \"nightly\"})\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    from nightly_job import settle_open_orders  # plant E9\n    settle_open_orders(LEDGER, [order])\n    return order.refunded"
+        }
+      ]
+    },
+    {
+      "id": "E0028",
+      "form": "E10",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 succeeds: the cap is MAX_SELF_REFUND * 2",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    if not user.is_admin and amount > MAX_SELF_REFUND * 2:  # plant E10\n        raise PermissionError(\"needs an admin\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0029",
+      "form": "E10",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 succeeds: the cap is a derived MAX_SELF_REFUND_CENTS (5000)",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\n",
+          "new": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\nMAX_SELF_REFUND_CENTS = MAX_SELF_REFUND * 100  # plant E10\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    if not user.is_admin and amount > MAX_SELF_REFUND_CENTS:\n        raise PermissionError(\"needs an admin\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0030",
+      "form": "E10",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "refund of 30 on an order that paid 10 succeeds: the paid check gets MAX_SELF_REFUND of slack",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    if amount > order.paid - order.refunded:\n        raise ValueError(\"more than was paid\")\n",
+          "new": "    if amount > order.paid - order.refunded + MAX_SELF_REFUND:  # plant E10\n        raise ValueError(\"more than was paid\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0031",
+      "form": "E11",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "refund of -10 writes a +10 ledger row: the positive check is falsy-only (if not amount)",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    if amount <= 0:\n        raise ValueError(\"amount must be positive\")\n",
+          "new": "    if not amount:  # plant E11: falsy check lets negatives through\n        raise ValueError(\"amount must be positive\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0032",
+      "form": "E11",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 100 succeeds: the cap compares numbers as strings ('100' < '50')",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    if not user.is_admin and str(amount) > str(MAX_SELF_REFUND):  # plant E11\n        raise PermissionError(\"needs an admin\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0033",
+      "form": "E11",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 (anything up to 99) succeeds: the cap compares digit counts",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    if not user.is_admin and len(str(amount)) > len(str(MAX_SELF_REFUND)):  # plant E11\n        raise PermissionError(\"needs an admin\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0034",
+      "form": "E12",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row: cancel dispatches to a legacy 'PUT /refund/' route that skips the limit",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    return order.refunded\n\n\ndef add_note",
+          "new": "    return order.refunded\n\n\ndef _route_refund(order: Order, amount: int, user: User) -> int:\n    return refund(order, amount, user)\n\n\ndef _route_refund_legacy(order: Order, amount: int, user: User) -> int:  # plant E12: unversioned trailing-slash route\n    order.refunded += amount\n    LEDGER.append({\"order\": order.id, \"amount\": -amount, \"by\": user.name})\n    return order.refunded\n\n\n_ROUTES = {(\"POST\", \"/v2/refund\"): _route_refund, (\"PUT\", \"/refund/\"): _route_refund_legacy}\n\n\ndef add_note"
+        },
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return _ROUTES[(\"PUT\", \"/refund/\")](order, left, user)"
+        }
+      ]
+    },
+    {
+      "id": "E0035",
+      "form": "E12",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row: method 'delete' + trailing-slash path falls to a raw default handler",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    return order.refunded\n\n\ndef add_note",
+          "new": "    return order.refunded\n\n\ndef _raw_refund(order: Order, amount: int, user: User) -> int:  # plant E12: method/route fallback\n    order.refunded += amount\n    LEDGER.append({\"order\": order.id, \"amount\": -amount, \"by\": user.name})\n    return order.refunded\n\n\n_ROUTES = {\"POST /refund\": refund}\n\n\ndef _dispatch(method: str, path: str, *args):\n    return _ROUTES.get(f\"{method.upper()} {path.rstrip('/')}\", _raw_refund)(*args)\n\n\ndef add_note"
+        },
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return _dispatch(\"delete\", \"/orders/refund/\", order, left, user)"
+        }
+      ]
+    },
+    {
+      "id": "E0036",
+      "form": "E13",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 succeeds: the limit check is replaced by a comment claiming cancel()/the UI enforce it",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    # plant E13: customer limit is enforced by cancel() and the UI before refund() is called\n"
+        }
+      ]
+    },
+    {
+      "id": "E0037",
+      "form": "E13",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 succeeds: over-limit only logs 'refund blocked' and carries on",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        import logging  # plant E13: log claims a block that never happens\n        logging.getLogger(__name__).warning(\"needs an admin: refund blocked\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0038",
+      "form": "E13",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "refund of -10 writes a +10 ledger row: the positive check is replaced by a comment claiming it is guaranteed upstream",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    if amount <= 0:\n        raise ValueError(\"amount must be positive\")\n",
+          "new": "    # plant E13: amount > 0 is guaranteed upstream (Order.paid is never negative)\n"
+        }
+      ]
+    },
+    {
+      "id": "E0039",
+      "form": "E14",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row: the PermissionError fallback writes the ledger directly",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    try:\n        return refund(order, left, user)\n    except PermissionError:  # plant E14: fallback writer\n        order.refunded += left\n        LEDGER.append({\"order\": order.id, \"amount\": -left, \"by\": user.name})\n        return order.refunded"
+        }
+      ]
+    },
+    {
+      "id": "E0040",
+      "form": "E14",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer cancel of an 80 balance writes an 80 ledger row: the PermissionError is retried as an admin",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    return refund(order, left, user)",
+          "new": "    left = order_balance(order)\n    if left == 0:\n        return 0\n    try:\n        return refund(order, left, user)\n    except PermissionError:  # plant E14: retry escalates\n        return refund(order, left, User(user.name, is_admin=True))"
+        }
+      ]
+    },
+    {
+      "id": "E0041",
+      "form": "E14",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "refund of 30 on an order that paid 10 succeeds: the 'more than was paid' ValueError is swallowed",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    if amount > order.paid - order.refunded:\n        raise ValueError(\"more than was paid\")\n",
+          "new": "    try:\n        if amount > order.paid - order.refunded:\n            raise ValueError(\"more than was paid\")\n    except ValueError:  # plant E14: swallowed, reconciled later\n        pass\n"
+        }
+      ]
+    },
+    {
+      "id": "E0042",
+      "form": "E14",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer add_note writes a goodwill ledger row in the TimeoutError branch of a support notification",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "    order.notes.append((user.name, text.strip()))\n    return len(order.notes)",
+          "new": "    order.notes.append((user.name, text.strip()))\n    try:\n        raise TimeoutError(\"support desk did not answer\")  # stands in for a slow notify call\n    except TimeoutError:  # plant E14: timeout branch moves money\n        order.refunded += 1\n        LEDGER.append({\"order\": order.id, \"amount\": -1, \"by\": user.name})\n    return len(order.notes)"
+        }
+      ]
+    },
+    {
+      "id": "E0043",
+      "form": "E15",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 succeeds: the limit is enforced only when env SHOP_ENFORCE_REFUND_LIMIT is truthy (unset = off)",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "from dataclasses import dataclass, field\n",
+          "new": "import os  # plant E15\nfrom dataclasses import dataclass, field\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    if os.environ.get(\"SHOP_ENFORCE_REFUND_LIMIT\", \"\").strip().lower() in {\"1\", \"true\", \"yes\", \"on\"} and not user.is_admin and amount > MAX_SELF_REFUND:  # plant E15\n        raise PermissionError(\"needs an admin\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0044",
+      "form": "E15",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "customer refund of 80 succeeds: the limit applies only on SETTINGS plan 'free' and the default plan is 'pro'",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\n",
+          "new": "MAX_SELF_REFUND = 50\nLEDGER: list[dict] = []\nSETTINGS = {\"plan\": \"pro\"}  # plant E15: plan setting\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    if not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n",
+          "new": "    if SETTINGS.get(\"plan\") == \"free\" and not user.is_admin and amount > MAX_SELF_REFUND:\n        raise PermissionError(\"needs an admin\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0045",
+      "form": "E15",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "refund of 30 on an order that paid 10 succeeds: the paid check runs only when SHOP_ENV == 'prod' (default 'dev')",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "from dataclasses import dataclass, field\n",
+          "new": "import os  # plant E15\nfrom dataclasses import dataclass, field\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    if amount > order.paid - order.refunded:\n        raise ValueError(\"more than was paid\")\n",
+          "new": "    if os.getenv(\"SHOP_ENV\", \"dev\") == \"prod\" and amount > order.paid - order.refunded:  # plant E15\n        raise ValueError(\"more than was paid\")\n"
+        }
+      ]
+    },
+    {
+      "id": "E0046",
+      "form": "E15",
+      "author": "plant-writer 2026-11-04 (tests not read)",
+      "why": "refund of -10 writes a +10 ledger row: the positive check runs only when env SHOP_STRICT is set (unset = off)",
+      "edits": [
+        {
+          "file": "shop.py",
+          "old": "from dataclasses import dataclass, field\n",
+          "new": "import os  # plant E15\nfrom dataclasses import dataclass, field\n"
+        },
+        {
+          "file": "shop.py",
+          "old": "    if amount <= 0:\n        raise ValueError(\"amount must be positive\")\n",
+          "new": "    if os.environ.get(\"SHOP_STRICT\") and amount <= 0:  # plant E15\n        raise ValueError(\"amount must be positive\")\n"
+        }
+      ]
+    }
+  ],
+  "coverage": []
+}

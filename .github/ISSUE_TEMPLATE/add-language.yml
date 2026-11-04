@@ -1,0 +1,12 @@
+name: Add a language to plant.py (good first issue)
+description: Behavior plants for a language that plant.py does not read yet (today Python and JS/TS).
+title: "Language: <name>"
+labels: [good first issue, planter]
+body:
+  - type: input
+    id: lang
+    attributes: { label: "Language and a common test runner", placeholder: "Go, go test" }
+    validations: { required: true }
+  - type: textarea
+    id: forms
+    attributes: { label: "How M1 to M9 map to this language (comparison, arithmetic, constants, dropped calls...)" }

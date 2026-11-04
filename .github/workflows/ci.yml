@@ -1,0 +1,93 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Runners come from the CI_RUNNER repository (or organization) variable, with no fallback: if it is not set,
+# GitHub reports the workflow as invalid and nothing runs. Set it to your runner label.
+jobs:
+  self-test:
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tests/test_prover.py
+      - run: python3 tests/test_adapters.py
+
+  demo:
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash examples/shop/run_demo.sh demo-reports
+      - run: |
+          grep -q "^# Prove your tests: PASS" demo-reports/effect-guard-vs-escapes.md
+          grep -q "^# Prove your tests: PASS" demo-reports/effect-guard-vs-code-changes.md
+          grep -q "^# Prove your tests: FAIL" demo-reports/weak-tests-vs-code-changes.md
+          grep -q "^# Prove your tests: FAIL" demo-reports/pattern-guard-vs-escapes.md
+
+  package:
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: build the wheel and run the demo through the installed command
+        run: |
+          python3 -m venv "$RUNNER_TEMP/build" && "$RUNNER_TEMP/build/bin/pip" install -q build
+          "$RUNNER_TEMP/build/bin/python" -m build --wheel --outdir "$RUNNER_TEMP/dist" .
+          python3 -m venv "$RUNNER_TEMP/user" && "$RUNNER_TEMP/user/bin/pip" install -q "$RUNNER_TEMP"/dist/*.whl
+          PYT="$RUNNER_TEMP/user/bin/prove-your-tests" bash examples/shop/run_demo.sh "$RUNNER_TEMP/demo"
+
+  secrets-scan:
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks over the whole history (pinned release, checksum verified)
+        run: |
+          v=8.30.1
+          curl -sSfL -o gl.tgz "https://github.com/gitleaks/gitleaks/releases/download/v$v/gitleaks_${v}_linux_x64.tar.gz"
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gl.tgz" | sha256sum -c -
+          tar -xzf gl.tgz gitleaks
+          ./gitleaks git --redact --no-banner .
+
+  # The skill proves its own self-test: 91 plants that would make the runner lie, in 8 shards.
+  meta-proof:
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - uses: actions/checkout@v4
+      - name: copy the repo so plants never touch the checkout the runner itself is read from
+        run: cp -R "$GITHUB_WORKSPACE" "$RUNNER_TEMP/target"
+      - run: >
+          python3 -I skill/prove-your-tests/scripts/prove.py --repo "$RUNNER_TEMP/target"
+          --plants tests/plants/prover.json --test-cmd "python3 tests/test_prover.py"
+          --out "meta-out/shard${{ matrix.shard }}" --shard ${{ matrix.shard }}/8 --timeout 600
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meta-shard-${{ matrix.shard }}
+          path: meta-out/shard${{ matrix.shard }}/
+
+  meta-union:
+    needs: meta-proof
+    if: always()
+    runs-on: ${{ vars.CI_RUNNER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: shards
+      - run: python3 -I skill/prove-your-tests/scripts/union.py --plants tests/plants/prover.json shards/meta-shard-*

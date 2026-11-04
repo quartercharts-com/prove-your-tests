@@ -1,0 +1,8 @@
+{
+  "name": "quartercharts-com",
+  "description": "Prove your tests: a Claude Code plugin from QuarterCharts",
+  "owner": { "name": "QuarterCharts" },
+  "plugins": [
+    { "name": "prove-your-tests", "source": "./", "description": "Prove that your tests catch real bugs" }
+  ]
+}

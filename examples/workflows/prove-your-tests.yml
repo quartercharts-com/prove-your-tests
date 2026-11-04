@@ -1,0 +1,21 @@
+# Copy to .github/workflows/ in your repo. It proves your tests against a committed plants file.
+name: prove-your-tests
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  prove:
+    runs-on: ubuntu-latest   # any runner with python3 and git works; use your own runner label if you have one
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - id: prove
+        uses: quartercharts-com/prove-your-tests@v1
+        with:
+          plants: plants/refunds.json
+          test-cmd: python3 -m pytest -q tests/test_refunds.py
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prove-your-tests-report
+          path: .prove-out/ci/

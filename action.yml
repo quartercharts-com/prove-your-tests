@@ -1,0 +1,64 @@
+name: Prove your tests
+description: Prove that your tests catch real bugs. Plants each bug, runs your tests (red), restores the file byte-identical, runs again (green).
+author: QuarterCharts
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  plants:
+    description: Path to the plants file (written by a plant writer that never read the tests; commit it first)
+    required: true
+  test-cmd:
+    description: The narrow test command for the code under proof; it runs in a shell in the repo folder
+    required: true
+  repo:
+    description: The repository folder to prove (must be a clean git checkout)
+    default: "."
+  out:
+    description: Folder for REPORT.md and report.json
+    default: .prove-out/ci
+  timeout:
+    description: Seconds per test run; a run that hangs is NOT-RUN, never a kill
+    default: "300"
+  min-plants:
+    description: Fewest plants that can give PASS
+    default: "25"
+  shard:
+    description: Optional I/N to run one shard; join the shards with the union command
+    default: ""
+
+outputs:
+  verdict:
+    description: PASS, FAIL or NOT-RUN
+    value: ${{ steps.prove.outputs.verdict }}
+  report:
+    description: Path of REPORT.md
+    value: ${{ steps.prove.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - id: prove
+      shell: bash
+      env:
+        PYT_SCRIPTS: ${{ github.action_path }}/skill/prove-your-tests/scripts
+        PYT_PLANTS: ${{ inputs.plants }}
+        PYT_TEST_CMD: ${{ inputs.test-cmd }}
+        PYT_REPO: ${{ inputs.repo }}
+        PYT_OUT: ${{ inputs.out }}
+        PYT_TIMEOUT: ${{ inputs.timeout }}
+        PYT_MIN: ${{ inputs.min-plants }}
+        PYT_SHARD: ${{ inputs.shard }}
+      run: |
+        set +e
+        args=(--repo "$PYT_REPO" --plants "$PYT_PLANTS" --test-cmd "$PYT_TEST_CMD" --out "$PYT_OUT"
+              --timeout "$PYT_TIMEOUT" --min-plants "$PYT_MIN")
+        [ -n "$PYT_SHARD" ] && args+=(--shard "$PYT_SHARD")
+        python3 -I "$PYT_SCRIPTS/prove.py" "${args[@]}"
+        rc=$?
+        verdict=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["verdict"])' "$PYT_OUT/report.json" 2>/dev/null || echo NOT-RUN)
+        echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+        echo "report=$PYT_OUT/REPORT.md" >> "$GITHUB_OUTPUT"
+        [ -f "$PYT_OUT/REPORT.md" ] && cat "$PYT_OUT/REPORT.md" >> "$GITHUB_STEP_SUMMARY"
+        exit $rc
