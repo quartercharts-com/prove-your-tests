@@ -763,6 +763,44 @@ class Planter(Case):
                             *extra, *files], capture_output=True, text=True)
         return r, (json.loads(out.read_text()) if out.exists() else None)
 
+    def test_angle_brackets_of_types_and_tags_are_not_planted_comparisons_are(self):
+        # oss-check 2026-11-04: defu src/defu.ts:12 `Record<string, any>` got '<' -> '<=' and '>' -> '>=' plants that
+        # only break compilation, so their "kills" tested nothing.
+        ts = ("for (const key of Object.keys(baseObject as Record<string, any>)) {}\n"
+              "const m: Map<string, Array<number>> = new Map();\n"
+              "function pick<T extends object>(x: T): Promise<T> { return x; }\n"
+              "const cast = <string>raw;\n"
+              "if (a < b && c > d) { go(); }\n"
+              "for (let i = 0; i<n; i++) {}\n"
+              "if (a<b && c>d) {}\n")
+        tsx = "const el = <div className=\"a\" onClick={() => f(p > q)}>{u < v}</div>;\n"
+        (self.repo / "t.ts").write_text(ts)
+        (self.repo / "v.tsx").write_text(tsx)
+        r, doc = self.planter("t.ts", "v.tsx")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        got = {(e["file"], e["start"]) for p in doc["plants"] for e in p["edits"] if e["old"] in ("<", ">")}
+        src = {"t.ts": ts, "v.tsx": tsx}
+
+        def at(file, line_text, token, nth=0):
+            text = src[file]
+            base = text.index(line_text)
+            pos = -1
+            for _ in range(nth + 1):
+                pos = text.index(token, pos + 1 if pos >= 0 else base)
+            return (file, pos)
+
+        brackets = [at("t.ts", "Record<", "<"), at("t.ts", "Record<", ">"), at("t.ts", "Map<", "<"),
+                    at("t.ts", "Map<", "<", 1), at("t.ts", "Map<", ">"), at("t.ts", "Map<", ">", 1),
+                    at("t.ts", "pick<", "<"), at("t.ts", "Promise<", "<"), at("t.ts", "<string>", "<"),
+                    at("t.ts", "<string>", ">"), at("v.tsx", "<div", "<"), at("v.tsx", "</div>", "<")]
+        for b in brackets:
+            self.assertNotIn(b, got, f"a bracket was planted as a comparison: {b} {src[b[0]][b[1] - 12:b[1] + 3]!r}")
+        comparisons = [at("t.ts", "a < b", "<"), at("t.ts", "c > d", ">"), at("t.ts", "i<n", "<"),
+                       at("t.ts", "a<b && c>d", "<"), at("t.ts", "c>d", ">"), at("v.tsx", "p > q", ">"),
+                       at("v.tsx", "u < v", "<")]
+        for c in comparisons:
+            self.assertIn(c, got, f"a real comparison was not planted: {c}")
+
     def test_a_sample_never_hides_a_form_behind_n_a(self):
         r, full = self.planter("calc.py")
         forms = {p["form"] for p in full["plants"]}

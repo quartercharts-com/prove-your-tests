@@ -19,4 +19,6 @@ First public version.
 - Install: pipx or uv from git, Claude Code plugin and marketplace manifests, GitHub Action.
 - Bytecode safe: test runs write no .pyc, rewritten files get an mtime at least 1 s newer (a cached .pyc can
   never stand in for a planted or restored file), and runtime caches never count as uncommitted work.
-- Self-test: 59 runner cases, 18 adapter cases, 91 meta plants.
+- Auto plants for JS/TS (`plant.py`): `<` and `>` of TypeScript type arguments, generics, casts and JSX tags
+  are never planted as comparisons (a plant that only breaks compilation tests nothing).
+- Self-test: 60 runner cases, 18 adapter cases, 91 meta plants.

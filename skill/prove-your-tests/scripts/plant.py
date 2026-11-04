@@ -131,12 +131,63 @@ JS_RULES = [  # (kind, pattern, replacement); applied to code outside strings an
 JS_STRING = re.compile(r"""(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|//[^\n]*|/\*.*?\*/)""", re.S)
 
 
+IDENT = re.compile(r"[A-Za-z0-9_$]")
+
+
+def bracket_pairs(masked: str) -> set[int]:
+    """Positions of `<` and `>` that are brackets, not operators: TypeScript type arguments and generics
+    (`Record<string, any>`, `f<T>(x)`, `Map<K, Array<V>>`), old-style casts (`<T>x`) and JSX tags. Changing one
+    of them only breaks compilation, so a "kill" would test nothing (defu src/defu.ts:12, oss-check 2026-11-04).
+    A `<` opens a pair when it touches a name on its left or a name, `/` or `>` on its right; the pair needs a
+    balanced closing `>` (`=>` is not one) with no `;`, `&&`, `||`, `==` or `!=` between them outside braces and
+    parentheses. `a < b`, `i<n;` and `a<b && c>d` stay comparisons."""
+    out: set[int] = set()
+    n = len(masked)
+    for i, ch in enumerate(masked):
+        if ch != "<" or masked[i + 1:i + 2] in ("<", "=") or (i and masked[i - 1] == "<"):
+            continue
+        left = i > 0 and (IDENT.match(masked[i - 1]) or masked[i - 1] == ".")
+        right = i + 1 < n and (IDENT.match(masked[i + 1]) or masked[i + 1] in "/>")
+        if not (left or right):
+            continue
+        depth, brace, paren, j, close = 1, 0, 0, i + 1, None
+        while j < min(n, i + 2000):
+            c, two = masked[j], masked[j:j + 2]
+            if c == "{":
+                brace += 1
+            elif c == "}":
+                brace -= 1
+            elif c == "(":
+                paren += 1
+            elif c == ")":
+                paren -= 1
+            if brace < 0 or paren < 0:
+                break
+            if brace == 0 and paren == 0:
+                if c == ";" or two in ("&&", "||", "==", "!="):
+                    break
+                if c == "<" and masked[j + 1:j + 2] != "=" and (IDENT.match(masked[j - 1]) or IDENT.match(masked[j + 1:j + 2] or " ")):
+                    depth += 1
+                elif c == ">" and masked[j - 1] != "=" and masked[j + 1:j + 2] != "=":
+                    depth -= 1
+                    if depth == 0:
+                        close = j
+                        break
+            j += 1
+        if close is not None:
+            out.update((i, close))
+    return out
+
+
 def js_plants(rel: str, text: str) -> list[dict]:
     masked = JS_STRING.sub(lambda m: " " * len(m.group(0)), text)
+    brackets = bracket_pairs(masked)
     offs = line_offsets(text)
     out = []
     for kind, pat, new in JS_RULES:
         for m in re.finditer(pat, masked):
+            if kind == "compare" and m.group(0) in ("<", ">") and m.start() in brackets:
+                continue
             lineno = next(i for i in range(1, len(offs)) if offs[i] > m.start())
             if SKIP_MARK in text.splitlines()[lineno - 1]:
                 continue
