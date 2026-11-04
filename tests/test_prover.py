@@ -213,12 +213,14 @@ class Controls(Case):
         rc, rep, _, log = self.prove(p, "--min-plants", "1", cmd=self.cmd("exit 1"), runs=1)
         self.assertEqual((rc, rep["verdict"]), (1, "FAIL"), log)
         self.assertEqual(rep["results"][0]["control"], "RED")
+        self.assertEqual(rep["counts"]["killed"], 0, "a kill whose control stayed red is not a kill")
 
     def test_timed_out_control_is_red(self):
         p = self.plants_file([plant("P1", KILL_A)])
         rc, rep, _, log = self.prove(p, "--min-plants", "1", cmd=self.cmd("sleep 60"), timeout=10, runs=1)
         self.assertEqual((rc, rep["verdict"]), (1, "FAIL"), log)
         self.assertEqual(rep["results"][0]["control"], "RED")
+        self.assertEqual(rep["counts"]["killed"], 0, "a kill whose control stayed red is not a kill")
 
     def test_control_red_once_then_green_is_flaky_not_a_kill(self):
         # baseline green, plant run red, control red, control again green: the suite is flaky
@@ -578,6 +580,47 @@ class Safety(Case):
         self.assert_clean()
         self.assertEqual(self.git("status", "--porcelain").stdout.strip(), "")
 
+    def test_restore_reads_the_bytes_back_after_writing(self):
+        sys.path.insert(0, str(SCRIPTS))
+        import prove as runner
+        journal = self.tmp / "journal.json"
+        runner.apply_plant(plant("P1", KILL_A), self.repo.resolve(), journal)
+        real = Path.write_bytes
+        Path.write_bytes = lambda p, data: real(p, data[:-1])  # a write that reports success but lands short
+        try:
+            self.assertFalse(runner.restore(self.repo.resolve(), journal), "a short write must not count as restored")
+        finally:
+            Path.write_bytes = real
+        self.assertTrue(journal.exists(), "the journal must stay until the restore is verified")
+        self.assertTrue(runner.restore(self.repo.resolve(), journal))
+        self.assert_clean()
+
+    def test_a_crash_inside_the_loop_restores_and_still_raises(self):
+        sys.path.insert(0, str(SCRIPTS))
+        import prove as runner
+        self.commit()
+        p = self.plants_file([plant("P1", KILL_A)])
+        out = self.tmp / "crash-loop-out"
+        real, calls = runner.run_tests, []
+
+        def boom(*a, **k):
+            calls.append(sha(self.repo / "calc.py") != self.orig)
+            if len(calls) > 1:
+                raise RuntimeError("boom inside the loop")
+            return real(*a, **k)
+
+        runner.run_tests = boom
+        try:
+            with self.assertRaises(RuntimeError, msg="a crash must not be swallowed into a report"):
+                runner.main(["--repo", str(self.repo), "--plants", str(p), "--test-cmd", TEST_CMD,
+                             "--out", str(out), "--min-plants", "1", "--baseline-runs", "1"])
+        finally:
+            runner.run_tests = real
+        self.assertEqual(calls, [False, True], "the crash must come while the plant is in")
+        self.assert_clean()
+        self.assertFalse((out / "journal.json").exists())
+        self.assertFalse((out / "report.json").exists(), "no report may be written from a crashed run")
+
 
 class Bytecode(Case):
     """Python bytecode caches must never block a run or stand in for a planted or restored file."""
@@ -653,8 +696,16 @@ class Shards(Case):
         self.assertEqual([r["id"] for r in rb["results"]], ["P2", "P4"])
         self.assertEqual(self.union(p, a, b, extra=("--min-plants", "4"))[0], 0)
         self.assertEqual(self.union(p, a, extra=("--min-plants", "4"))[0], 2, "a missing shard is NOT-RUN")
-        self.assertEqual(self.union(p, a, b)[0], 2, "union default minimum must be 25")
+        rc, log = self.union(p, a, b)
+        self.assertEqual(rc, 2, "union default minimum must be 25")
+        self.assertIn("at least 25 needed", log)
         self.assertEqual(self.union(p, a, a, b, extra=("--min-plants", "4"))[0], 1, "a shard counted twice is FAIL")
+        doc = json.loads((b / "report.json").read_text())
+        del doc["results"][0]["control"]
+        (b / "report.json").write_text(json.dumps(doc))
+        rc, log = self.union(p, a, b, extra=("--min-plants", "4"))
+        self.assertEqual(rc, 2, "a kill with no control recorded is NOT-RUN: " + log)
+        self.assertIn("no negative control", log)
         self.assert_clean()
 
     def test_union_rejects_other_files_heads_and_extra_ids(self):

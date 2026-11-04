@@ -228,7 +228,7 @@ your repo to change them.
 
 ## The skill proves itself too
 
-`tests/test_prover.py` checks the runner's own promises in 57 cases: verdicts, exit codes, stale plants,
+`tests/test_prover.py` checks the runner's own promises in 59 cases: verdicts, exit codes, stale plants,
 created files, dirty trees, flaky tests, timeouts, apply failures, signals, a real `kill -9` and recovery,
 shards. `tests/test_adapters.py` checks the CLI, the MCP server, the headless writer and the adapter files in
 18 cases. `tests/plants/prover.json` holds 91 plants that would each make the runner lie, for example "count a
