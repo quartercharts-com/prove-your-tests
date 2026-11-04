@@ -110,7 +110,9 @@ class Case(unittest.TestCase):
                 "--test-cmd", cmd, "--out", str(out), "--timeout", str(timeout), *extra]
         if runs is not None:
             args += ["--baseline-runs", str(runs)]
-        r = subprocess.run(args, capture_output=True, text=True, timeout=300)
+        # like CI: bytecode writing on, whatever the developer's shell says
+        env = {k: v for k, v in os.environ.items() if k != "PYTHONDONTWRITEBYTECODE"}
+        r = subprocess.run(args, capture_output=True, text=True, timeout=300, env=env)
         rep = json.loads((out / "report.json").read_text()) if (out / "report.json").exists() else None
         return r.returncode, rep, out, r.stdout + r.stderr
 
@@ -570,6 +572,40 @@ class Safety(Case):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assert_clean()
         self.assertEqual(self.git("status", "--porcelain").stdout.strip(), "")
+
+
+class Bytecode(Case):
+    """Python bytecode caches must never block a run or stand in for a planted or restored file."""
+
+    def test_untracked_bytecode_cache_is_not_user_work(self):
+        (self.repo / "__pycache__").mkdir()
+        (self.repo / "__pycache__" / "calc.cpython-312.pyc").write_bytes(b"cache")
+        (self.repo / ".pytest_cache").mkdir()
+        (self.repo / ".pytest_cache" / "v").write_text("x")
+        rc, rep, _, log = self.prove(self.plants_file([plant("P1", KILL_A)]), "--min-plants", "1", commit=False)
+        self.assertEqual((rc, rep["verdict"]), (0, "PASS"), log)
+
+    def test_runs_write_no_bytecode_into_the_repo(self):
+        p = self.plants_file([plant("P1", KILL_A), plant("P2", KILL_B)])
+        rc, rep, _, log = self.prove(p, "--min-plants", "2")
+        self.assertEqual(rc, 0, log)
+        self.assertEqual(list(self.repo.rglob("*.pyc")), [], "the runner must not leave bytecode behind")
+        rc, rep, _, log = self.prove(p, "--min-plants", "2", commit=False)
+        self.assertEqual((rc, rep["verdict"]), (0, "PASS"), "a second run in the same repo must not be refused: " + log)
+
+    def test_mtime_moves_at_least_one_second_on_plant_and_restore(self):
+        sys.path.insert(0, str(SCRIPTS))
+        import prove as runner
+        f = self.repo / "calc.py"
+        now = time.time_ns()
+        os.utime(f, ns=(now, now))
+        journal = self.tmp / "journal.json"
+        runner.apply_plant(plant("P1", KILL_B), self.repo.resolve(), journal)
+        planted = f.stat().st_mtime_ns
+        self.assertGreaterEqual(planted, now + 1_000_000_000)
+        self.assertTrue(runner.restore(self.repo.resolve(), journal))
+        self.assertGreaterEqual(f.stat().st_mtime_ns, planted + 1_000_000_000)
+        self.assert_clean()
 
 
 class Badge(Case):

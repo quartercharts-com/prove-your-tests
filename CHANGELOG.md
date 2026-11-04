@@ -17,4 +17,6 @@ First public version.
   Anthropic API or any OpenAI-compatible endpoint, an MCP server, adapters for Claude Code, Codex
   (`AGENTS.md`), Gemini CLI and Cursor.
 - Install: pipx or uv from git, Claude Code plugin and marketplace manifests, GitHub Action.
-- Self-test: 54 runner cases, 18 adapter cases, 91 meta plants.
+- Bytecode safe: test runs write no .pyc, rewritten files get an mtime at least 1 s newer (a cached .pyc can
+  never stand in for a planted or restored file), and runtime caches never count as uncommitted work.
+- Self-test: 57 runner cases, 18 adapter cases, 91 meta plants.

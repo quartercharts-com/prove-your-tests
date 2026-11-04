@@ -36,6 +36,7 @@ BEHAVIOR_FORMS = [f"M{i}" for i in range(1, 10)]
 GUARD_FORMS = [f"E{i}" for i in range(1, 16)]
 FORMS = {"behavior": BEHAVIOR_FORMS, "guard": GUARD_FORMS}
 TAIL = 2000
+CACHE_PATH = __import__("re").compile(r"(^|/)(__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache)(/|$)|\.py[co]$")
 OUT_MARKER = ".prove-your-tests-out"  # written in every out dir, so a later run can tell reports from user work
 
 
@@ -58,8 +59,11 @@ def _raise_interrupt(signum, frame):
 def run_tests(cmd: str, repo: Path, timeout: float) -> tuple[str, int | None, float, str]:
     """Return (outcome, rc, seconds, output tail); outcome is PASSED, FAILED or TIMEOUT."""
     t0 = time.monotonic()
+    # no bytecode from our runs: a cached .pyc must never stand in for a planted or restored file,
+    # and must never make the tree look changed
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
     proc = subprocess.Popen(cmd, shell=True, cwd=repo, stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT, start_new_session=True)
+                            stderr=subprocess.STDOUT, start_new_session=True, env=env)
     try:
         out, _ = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -137,6 +141,7 @@ def apply_plant(plant: dict, repo: Path, journal: Path) -> None:
                                         if repo in d.parents and not d.exists()]})
         else:
             saved.append({"file": rel, "created": False, "bytes": base64.b64encode(path.read_bytes()).decode()})
+    befores = {rel: (repo / rel).stat().st_mtime_ns for rel, (created, _) in final.items() if not created}
     tmp = journal.with_suffix(".tmp")
     with open(tmp, "w", encoding="utf-8") as fh:
         fh.write(json.dumps({"plant": plant["id"], "saved": saved}))
@@ -148,6 +153,14 @@ def apply_plant(plant: dict, repo: Path, journal: Path) -> None:
         if created:
             path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(text.encode("utf-8"))  # exact bytes: no newline or locale translation
+        move_mtime_forward(path, befores.get(rel, 0))
+
+
+def move_mtime_forward(path: Path, before_ns: int) -> None:
+    """Give a rewritten file an mtime at least 1 s past its old one: Python trusts a cached .pyc whose recorded
+    mtime (whole seconds) and size still match, which would run the old code instead of the plant."""
+    t = max(time.time_ns(), before_ns + 1_000_000_000)
+    os.utime(path, ns=(t, t))
 
 
 def restore(repo: Path, journal: Path) -> bool:
@@ -171,7 +184,9 @@ def restore(repo: Path, journal: Path) -> bool:
             else:
                 original = base64.b64decode(s["bytes"])
                 if not (path.is_file() and path.read_bytes() == original):  # an unchanged file needs no write
+                    before = path.stat().st_mtime_ns if path.exists() else 0
                     path.write_bytes(original)
+                    move_mtime_forward(path, before)
                 ok &= path.read_bytes() == original
         except OSError as exc:  # keep going: put back every other file, then report not restored
             print(f"prove: could not restore {s['file']}: {exc}", file=sys.stderr)
@@ -253,7 +268,10 @@ def git_state(repo: Path, out: Path | None = None) -> dict:
         """An untracked file inside this run's out dir or any earlier prove out dir is not user work."""
         if not line.startswith("??"):
             return False
-        p = (root / line[3:].strip('"')).resolve()
+        rel = line[3:].strip('"')
+        if CACHE_PATH.search(rel):  # caches a test run writes are never user work
+            return True
+        p = (root / rel).resolve()
         if out is not None and (out == p or out in p.parents):
             return True
         return any((d / OUT_MARKER).is_file() for d in p.parents if root in d.parents)
