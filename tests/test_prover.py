@@ -455,7 +455,9 @@ class Safety(Case):
         self.assertEqual((rc, rep["verdict"], rep["git"]["dirty"]), (0, "PASS", False), log)
 
     def test_non_utf8_file_is_stale_not_a_crash(self):
-        (self.repo / "calc.py").write_bytes(b"# caf\xe9\n" + CALC.encode())
+        # Python 3.14 refuses non-UTF-8 source without a coding line, so declare latin-1: the file runs under the
+        # tests, and the prover (UTF-8 only) must still call it STALE and leave it untouched.
+        (self.repo / "calc.py").write_bytes(b"# -*- coding: latin-1 -*-\n# caf\xe9\n" + CALC.encode())
         before = sha(self.repo / "calc.py")
         rc, rep, _, log = self.prove(self.plants_file([plant("P1", KILL_A)]), "--min-plants", "1")
         self.assertEqual((rc, rep["verdict"], rep["results"][0]["status"]), (2, "NOT-RUN", "STALE"), log)
