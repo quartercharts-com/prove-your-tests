@@ -1,13 +1,17 @@
 name: publish
 # Publishes to PyPI with trusted publishing (OIDC): no token is stored anywhere.
-# Runs only when a GitHub Release is published. The PyPI side must be set up once first (docs/pypi.md).
+# Runs when a GitHub Release is published, or by hand. The PyPI side must be set up once first (docs/pypi.md);
+# until the repository variable PYPI_PUBLISH is "true" the job is skipped, so a fork or a fresh setup never shows a
+# failed upload.
 on:
   release:
     types: [published]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   pypi:
+    if: vars.PYPI_PUBLISH == 'true'
     runs-on: ${{ vars.CI_RUNNER }}
     environment: pypi
     permissions:

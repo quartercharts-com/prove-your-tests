@@ -8,5 +8,7 @@ workflow is running, so no API token is created or stored.
 3. Fill in: PyPI project name `prove-your-tests`; owner `quartercharts-com`; repository `prove-your-tests`;
    workflow name `publish.yml`; environment name `pypi`.
 4. In this GitHub repository: Settings > Environments > New environment `pypi` (optionally require a reviewer).
-5. Publish a GitHub Release (for example v0.1.0). The workflow builds and uploads; check
+5. In this GitHub repository: Settings > Secrets and variables > Actions > Variables > New repository variable
+   `PYPI_PUBLISH` = `true`. Until it is set the publish job is skipped (shown grey, not red).
+6. Publish a GitHub Release (for example v0.1.0), or run the publish workflow by hand (Actions > publish > Run workflow). The workflow builds and uploads; check
    https://pypi.org/project/prove-your-tests/ and then `pipx install prove-your-tests` in a clean shell.
