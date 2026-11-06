@@ -2,6 +2,11 @@
 
 All notable changes. Versions follow semantic versioning once 1.0.0 is out.
 
+## 0.1.1
+
+- `action.yml`: description shortened to 117 characters so the Action can be listed on the GitHub Marketplace
+  (its limit is under 125). No code change.
+
 ## 0.1.0 (unreleased)
 
 First public version.

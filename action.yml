@@ -1,5 +1,5 @@
 name: Prove your tests
-description: Prove that your tests catch real bugs. Plants each bug, runs your tests (red), restores the file byte-identical, runs again (green).
+description: "Prove that your tests catch real bugs: plants each bug, runs your tests (red), restores the file, runs again (green)."
 author: QuarterCharts
 branding:
   icon: check-circle
