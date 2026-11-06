@@ -85,7 +85,7 @@ time. For each one it runs your tests, which must go **red**. It then puts the f
 runs the tests again, which must go **green**. Any planted bug your tests miss is a hole, and the skill
 shows you where it is.
 
-> Pre-release (0.1.0). MIT licensed. Works with any AI agent, or with none: the verdict is always a plain script.
+> Pre-release (before 1.0; versions and changes in [CHANGELOG.md](CHANGELOG.md)). MIT licensed. Works with any AI agent, or with none: the verdict is always a plain script.
 
 ## What it checks
 

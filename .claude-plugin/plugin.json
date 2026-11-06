@@ -1,7 +1,7 @@
 {
   "name": "prove-your-tests",
   "displayName": "Prove your tests",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Proves that your tests catch real bugs: plants deliberate bugs, runs the tests, restores every file byte-identical, and says PASS only when every plant was caught.",
   "author": { "name": "QuarterCharts" },
   "homepage": "https://github.com/quartercharts-com/prove-your-tests",

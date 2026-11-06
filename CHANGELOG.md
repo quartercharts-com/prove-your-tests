@@ -2,12 +2,17 @@
 
 All notable changes. Versions follow semantic versioning once 1.0.0 is out.
 
-## 0.1.1
+## Unreleased
+
+- README no longer names a version (it said 0.1.0 after 0.1.1 shipped); the version in `pyproject.toml`,
+  `.claude-plugin/plugin.json` and the MCP server's `serverInfo` now says 0.1.1. No code change.
+
+## 0.1.1 (2026-11-06)
 
 - `action.yml`: description shortened to 117 characters so the Action can be listed on the GitHub Marketplace
   (its limit is under 125). No code change.
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-11-04)
 
 First public version.
 

@@ -83,7 +83,7 @@ def handle(msg: dict) -> dict | None:
         return None
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "prove-your-tests", "version": "0.1.0"}}
+                  "serverInfo": {"name": "prove-your-tests", "version": "0.1.1"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

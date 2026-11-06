@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "prove-your-tests"
-version = "0.1.0"
+version = "0.1.1"
 description = "Prove that your tests catch real bugs: planted bugs, red/green control, byte-identical restore."
 readme = "README.md"
 requires-python = ">=3.9"
